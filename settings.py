@@ -3,15 +3,18 @@ from yarl import URL
 
 
 class Settings(BaseSettings):
-    db_host: str = "localhost"
+    """db_host: str = "localhost"
     db_port: int = 3306
     db_user: str = "fileflow"
     db_pass: str = "fileflow"
     db_base: str = "fileflow"
-    db_echo: bool = False
+    db_echo: bool = False"""
 
     ROOT_PATH: str = "/root/workspace/fileflow"
     SQLALCHEMY_DATABASE_URL: str = f"sqlite:///{ROOT_PATH}/web/db/sql.db"
+    DEFAULT_CAPACITY: int = 1024 * 1024 * 1024 * 1024
+    SECRET_KEY: str = "b3d6e"
+    ALGORITHM: str = "HS256"
 
     @property
     def db_url(self) -> URL:
@@ -38,4 +41,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-print(settings.db_url)

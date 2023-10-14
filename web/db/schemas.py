@@ -2,8 +2,9 @@ from pydantic import BaseModel
 
 
 class ItemBase(BaseModel):
-    title: str
-    description: str | None = None
+    name: str
+    type: int
+    size: int
 
 
 class ItemCreate(ItemBase):
@@ -20,6 +21,8 @@ class Item(ItemBase):
 
 class UserBase(BaseModel):
     email: str
+    nickname: str | None = None
+    username: str
 
 
 class UserCreate(UserBase):
@@ -32,12 +35,17 @@ class User(UserBase):
     items: list[Item] = []
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
-class FileInfo(BaseModel):
+class Item(BaseModel):
+    id: int
     name: str
+    type: int
     size: int
-    type: str
-    MD5: str
-    path: str = ""
+    parent: int
+    path: str
+    owner_id: int
+
+    class Config:
+        orm_mode = True
