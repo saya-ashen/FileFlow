@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     db_echo: bool = False"""
 
     ROOT_PATH: str = "/root/workspace/fileflow"
-    SQLALCHEMY_DATABASE_URL: str = f"sqlite:///{ROOT_PATH}/web/db/sql.db"
+    SQLALCHEMY_DATABASE_URL: str = f"sqlite:///{ROOT_PATH}/backend/db/sql.db"
     DEFAULT_CAPACITY: int = 1024 * 1024 * 1024 * 1024
     SECRET_KEY: str = "b3d6e"
     ALGORITHM: str = "HS256"
