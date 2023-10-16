@@ -20,6 +20,9 @@ class User(Base):
     used = Column(Integer, default=0)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
+    # 用户的角色，0表示管理员，1表示普通用户
+    role = Column(Integer, default=1)
+    # 用户的文件根目录
 
     items = relationship("Item", back_populates="owner")
 

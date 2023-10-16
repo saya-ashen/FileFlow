@@ -1,3 +1,5 @@
+import os
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
@@ -10,11 +12,16 @@ class Settings(BaseSettings):
     db_base: str = "fileflow"
     db_echo: bool = False"""
 
-    ROOT_PATH: str = "/root/workspace/fileflow"
-    SQLALCHEMY_DATABASE_URL: str = f"sqlite:///{ROOT_PATH}/backend/db/sql.db"
+    ROOT_PATH: str = "/root/workspace/fileflow/backend"
+    SQLALCHEMY_DATABASE_URL: str = f"sqlite:///{ROOT_PATH}/db/sql.db"
     DEFAULT_CAPACITY: int = 1024 * 1024 * 1024 * 1024
-    SECRET_KEY: str = "b3d6e"
+    # SECRET_KEY: str = "b3d6e"
     ALGORITHM: str = "HS256"
+    TOKEN_URL: str = "/api/login"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    JWT_SECRET_KEY: str = "test"  # should be kept secret
+    JWT_REFRESH_SECRET_KEY: str = "test"  # should be kept secret
 
     @property
     def db_url(self) -> URL:

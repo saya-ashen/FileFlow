@@ -32,6 +32,12 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     is_active: bool
+    role: int
+    nickname: str
+    email: str
+    capacity: int
+    used: int
+    username: str
     items: list[Item] = []
 
     class Config:

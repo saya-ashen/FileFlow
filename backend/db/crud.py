@@ -1,7 +1,9 @@
+import os
+
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from ...settings import settings
+from ..settings import settings
 from . import models, schemas
 
 
@@ -25,6 +27,12 @@ def create_user(db: Session, user: schemas.UserCreate):
     # 生成加密后的密码
     password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     hashed_password = password_context.hash(user.password)
+    root_path = settings.ROOT_PATH + "/UserStorage/" + user.username
+    # 判断root_path是否存在，如果不存在则创建, 如果存在则返回错误信息
+    if not os.path.exists(root_path):
+        os.mkdir(root_path)
+    else:
+        return {"error": "username exists"}
     db_user = models.User(
         email=user.email,
         hashed_password=hashed_password,
@@ -33,6 +41,8 @@ def create_user(db: Session, user: schemas.UserCreate):
         capacity=settings.DEFAULT_CAPACITY,
         used=0,
         is_active=True,
+        role=1,
+        root_path=root_path,
     )
     db.add(db_user)
     db.commit()
