@@ -8,7 +8,8 @@ class ItemBase(BaseModel):
 
 
 class ItemCreate(ItemBase):
-    pass
+    parent: int
+    path: str
 
 
 class Item(ItemBase):

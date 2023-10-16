@@ -20,26 +20,32 @@ router = APIRouter(prefix="/api")
 def mkdir(
     path: str,
     user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+):
+    user_root_path = get_root_path(user)
+    if not os.path.exists(f"{user_root_path}"):
+        return {"error": "path not exists"}
+    os.mkdir(f"{user_root_path}/{path}")
+    return {"path": path}
+
+
+@router.post("/rename/{path:path}")
+def rename(
+    path: str,
+    target: ItemCreate,
+    action: str,
+    destination: str,
+    override: bool,
+    rename: bool,
+    user: User = Depends(get_current_active_user),
 ):
     user_root_path = get_root_path(user)
     if not os.path.exists(f"{user_root_path}/{path}"):
         return {"error": "path not exists"}
-    os.mkdir(f"{user_root_path}/{path}")
-    return {"path": path}
-
-
-@router.post("/move/{path:path}")
-def move(path: str):
-    user_root_path = get_root_path(user)
-    if not os.path.exists(f"{user_root_path}/{path}"):
-        return {"error": "path not exists"}
-    os.mkdir(f"{user_root_path}/{path}")
     return {"path": path}
 
 
 @router.post("/copy/{path:path}")
-def copy(path: str):
+def copy(path: str, user: User = Depends(get_current_active_user)):
     user_root_path = get_root_path(user)
     if not os.path.exists(f"{user_root_path}/{path}"):
         return {"error": "path not exists"}
@@ -48,16 +54,21 @@ def copy(path: str):
 
 
 @router.post("/delete/{path:path}")
-def delete(path: str):
+def delete(path: str, user: User = Depends(get_current_active_user)):
     user_root_path = get_root_path(user)
-    if not os.path.exists(f"{user_root_path}/{path}"):
+    file_path = f"{user_root_path}/{path}"
+    if not os.path.exists(file_path):
         return {"error": "path not exists"}
-    os.mkdir(f"{user_root_path}/{path}")
+    # 删除文件或文件夹
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+    else:
+        os.rmdir(file_path)
     return {"path": path}
 
 
 @router.post("/rename/{path:path}")
-def rename(path: str):
+def rename(path: str, user: User = Depends(get_current_active_user)):
     user_root_path = get_root_path(user)
     if not os.path.exists(f"{user_root_path}/{path}"):
         return {"error": "path not exists"}
@@ -69,9 +80,8 @@ def rename(path: str):
 @router.post("/preupload/{path:path}|/preupload")
 async def preupload(
     itemcreate: ItemCreate,
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: Session = Depends(get_db),
     path: str = None,
+    user: User = Depends(get_current_active_user),
 ):
     user_root_path = get_root_path(user)
     # 判断文件夹路径是否存在，如果不存在则返回错误信息
@@ -79,7 +89,6 @@ async def preupload(
         print(f"{user_root_path}/{path}")
         return {"error": "path not exists"}
     # 判断剩余空间是否足够，如果不够则返回错误信息
-    user = await get_current_active_user(db, token)
     if not check_space(user.id, itemcreate.size):
         return {"error": "space not enough"}
 
@@ -88,7 +97,12 @@ async def preupload(
 
 # 上传文件，实现断点续传功能？
 @router.post("/upload/{path:path}")
-async def create_upload_file(file: UploadFile, itemCreate: ItemCreate, path: str):
+async def create_upload_file(
+    file: UploadFile,
+    itemCreate: ItemCreate,
+    path: str,
+    user: User = Depends(get_current_active_user),
+):
     user_root_path = get_root_path(user)
     contents = await file.read()
     if not os.path.exists(f"{user_root_path}/{path}"):
@@ -108,7 +122,7 @@ async def list(path: str, user: User = Depends(get_current_active_user)):
 
 
 @router.get("/download/{path:path}")
-async def download(path: str):
+async def download(path: str, user: User = Depends(get_current_active_user)):
     user_root_path = get_root_path(user)
     if not os.path.exists(f"{user_root_path}/{path}"):
         return {"error": "path not exists"}
