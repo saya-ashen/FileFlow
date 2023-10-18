@@ -15,9 +15,13 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.TOKEN_URL)
 
 
 class Token(BaseModel):
-    access_token: str
-    refresh_token: str
+    access_Token: str
+    refresh_Token: str
     expires: str
+
+
+class RefreshToken(BaseModel):
+    refresh_Token: str
 
 
 class LoginData(Token):
@@ -29,6 +33,11 @@ class LoginResponse(BaseModel):
     success: bool
     data: LoginData
     access_token: str  # 为了兼容docs工具，这里返回的是access_token TODO: 以后删除
+
+
+class RefreshResponse(BaseModel):
+    success: bool
+    data: Token
 
 
 class TokenData(BaseModel):

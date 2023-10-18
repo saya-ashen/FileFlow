@@ -81,7 +81,7 @@ def rename(path: str, user: User = Depends(get_current_active_user)):
 
 
 # 上传文件之前先发送json数据，包括文件名，文件大小，文件类型，文件路径等信息
-@router.post("/preupload/{path:path}|/preupload")
+@router.post("/preupload/{path:path}")
 async def preupload(
     itemcreate: ItemCreate,
     path: str = None,
@@ -123,7 +123,7 @@ async def upload(
     return {"filename": file.filename}
 
 
-@router.get("/list/{path:path}|/list")
+@router.get("/list/{path:path}")
 async def list(
     path: str,
     user: User = Depends(get_current_active_user),
@@ -138,8 +138,8 @@ async def list(
     if folder is None:
         return {"error": "path not exists"}
     items = crud.get_items_by_parent_id(db, folder.id)
-    print(items)
-    return items
+    response = {"path": path, "items": items, "total": len(items), "success": True}
+    return response
 
 
 @router.get("/download/{path:path}")

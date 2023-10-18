@@ -4,8 +4,21 @@ from sqlalchemy.orm import Session
 
 from ..db.crud import create_user, get_user_by_email, get_user_by_username
 from ..db.schemas import User, UserCreate
-from ..dependencies import LoginData, LoginResponse, get_current_active_user, get_db
-from ..utils import create_access_token, create_refresh_token, verify_password
+from ..dependencies import (
+    LoginData,
+    LoginResponse,
+    RefreshResponse,
+    RefreshToken,
+    Token,
+    get_current_active_user,
+    get_db,
+)
+from ..utils import (
+    create_access_token,
+    create_refresh_token,
+    verify_password,
+    verify_refresh_token,
+)
 
 router = APIRouter(prefix="/api")
 """
@@ -58,20 +71,41 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = create_access_token(user.id)
-    refresh_token = create_refresh_token(user.id)
+    access_token, expires_access = create_access_token(user.id)
+    refresh_token, expire_refresh = create_refresh_token(user.id)
     response = LoginResponse(
         success=True,
         data=LoginData(
             username=user.username,
             roles=["admin"],
-            access_token=access_token,
-            refresh_token=refresh_token,
-            expires="",  # TODO
+            access_Token=access_token,
+            refresh_Token=refresh_token,
+            expires=expires_access,  # TODO
         ),
         access_token=access_token,
     )
     return response
+
+
+@router.post("/refreshToken", response_model=RefreshResponse)
+async def refresh_token(refresh_token: RefreshToken):
+    payload = verify_refresh_token(refresh_token.refresh_Token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token, expires = create_access_token(payload.get("sub"))
+    reponse = RefreshResponse(
+        success=True,
+        data=Token(
+            access_Token=access_token,
+            refresh_Token=refresh_token.refresh_Token,
+            expires=expires,
+        ),
+    )
+    return reponse
 
 
 @router.get("/users/me/", response_model=User)
