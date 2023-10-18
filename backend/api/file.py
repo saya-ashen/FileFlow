@@ -101,10 +101,11 @@ async def preupload(
 
 # 上传文件，实现断点续传功能？
 @router.post("/upload/{path:path}")
-async def create_upload_file(
+async def upload(
     file: UploadFile,
     path: str,
     user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
 ):
     user_root_path = get_root_path(user)
     contents = await file.read()
@@ -113,6 +114,12 @@ async def create_upload_file(
 
     with open(f"{user_root_path}/{path}/{file.filename}", "wb") as f:
         f.write(contents)
+    item = ItemCreate(
+        path=f"{path}/{file.filename}",
+        type=1,
+        size=file.size,
+    )
+    crud.create_user_item(db, item, user)
     return {"filename": file.filename}
 
 
