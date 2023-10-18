@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from ..db.crud import check_space
+from ..db import crud
 from ..db.schemas import ItemCreate, User
 from ..dependencies import (
     create_folder_dp,
@@ -93,7 +93,7 @@ async def preupload(
         print(f"{user_root_path}/{path}")
         return {"error": "path not exists"}
     # 判断剩余空间是否足够，如果不够则返回错误信息
-    if not check_space(user.id, itemcreate.size):
+    if not crud.check_space(user.id, itemcreate.size):
         return {"error": "space not enough"}
 
     return {"path": path}
@@ -116,13 +116,23 @@ async def create_upload_file(
     return {"filename": file.filename}
 
 
-@router.get("/list/{path:path}")
-async def list(path: str, user: User = Depends(get_current_active_user)):
-    user_root_path = get_root_path(user)
+@router.get("/list/{path:path}|/list")
+async def list(
+    path: str,
+    user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """user_root_path = get_root_path(user)
     if not os.path.exists(f"{user_root_path}/{path}"):
         return {"error": "path not exists"}
 
-    return os.listdir(f"{user_root_path}/{path}")
+    return os.listdir(f"{user_root_path}/{path}")"""
+    folder = crud.get_user_item_by_path(db, user, path)
+    if folder is None:
+        return {"error": "path not exists"}
+    items = crud.get_items_by_parent_id(db, folder.id)
+    print(items)
+    return items
 
 
 @router.get("/download/{path:path}")

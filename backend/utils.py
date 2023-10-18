@@ -73,8 +73,8 @@ def get_file_path(item: models.Item, user: schemas.User) -> str:
     return f"{get_root_path(user)}/{file_path}{item.name}"
 
 
-# 创建文件夹
-def create_folder(
+# 创建用户根文件夹
+def create_root_folder(
     path: str,
     user: schemas.User,
     # user: schemas.User = Depends(get_current_active_user),
@@ -88,6 +88,23 @@ def create_folder(
     #    raise Exception("user root path not exists")
     os.mkdir(f"{user_root_path}/{path}")
     crud.create_user_root_item(db, item_create, user)
+    return True
+
+
+def create_folder(
+    path: str,
+    user: schemas.User,
+    # user: schemas.User = Depends(get_current_active_user),
+    db: Session,
+) -> bool:
+    print("create folder")
+    user_root_path = get_root_path(user)
+    print(user_root_path)
+    item_create = schemas.ItemCreate(path=path, type=0, size=0)
+    # if path != "" and (not os.path.exists(f"{user_root_path}")):
+    #    raise Exception("user root path not exists")
+    os.mkdir(f"{user_root_path}/{path}")
+    crud.create_user_item(db, item_create, user)
     return True
 
 

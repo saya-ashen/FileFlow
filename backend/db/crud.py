@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from ..settings import settings
-from ..utils import create_folder
+from ..utils import create_root_folder
 from . import models, schemas
 
 
@@ -49,7 +49,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     # 创建用户根目录
     print("create user root folder")
-    create_folder("", db_user, db)
+    create_root_folder("", db_user, db)
     return db_user
 
 
@@ -61,8 +61,13 @@ def get_item(db: Session, item_id: int):
     return db.query(models.Item).filter(models.Item.id == item_id).first()
 
 
+def get_item_by_parent_id(db: Session, parent_id: int):
+    return db.query(models.Item).filter(models.Item.parent_id == parent_id).all()
+
+
 # 按照文件名查找文件夹下的特定文件
 def get_item_by_name(db: Session, name: str, parent_id: int):
+    print("get_item_by_name:" + name + " " + str(parent_id))
     return (
         db.query(models.Item)
         .filter(models.Item.name == name, models.Item.parent_id == parent_id)
@@ -71,29 +76,34 @@ def get_item_by_name(db: Session, name: str, parent_id: int):
 
 
 # 根据文件（夹）路径获取文件（夹）信息
-def get_item_by_path(db: Session, path: str):
+def get_user_item_by_path(db: Session, user: schemas.User, path: str):
+    print("get_user_item_by_path:" + path)
     # 将传递的路径信息拆分为目录名称的列表
     path_parts = path.split("/")
-    # if len(path_parts) == 1:
-    #    return db.query(models.Item).filter(models.Item.name == path).first()
-    # 初始化根目录的ID
-    parent_id = 0
-
+    parent = (
+        db.query(models.Item)
+        .filter(models.Item.parent_id == 0, models.Item.name == user.username)
+        .first()
+    )
+    # 判断路径是否为空，如果为空则返回根目录信息
+    if path == "":
+        return parent
     for folder_name in path_parts:
-        folder_id = get_item_by_name(db, folder_name, parent_id)
-        if folder_id is None:
+        folder = get_item_by_name(db, folder_name, parent.id)
+        if folder is None:
             raise Exception("path not exists")
-        parent_id = folder_id
+        parent = folder
 
-    return db.query(models.Item).filter(models.Item.path == path).first()
+    return parent
 
 
-def create_user_item(db: Session, item: schemas.ItemCreate, user_id: int):
-    parent = get_item_by_path(db, item.path)
+def create_user_item(db: Session, item: schemas.ItemCreate, user: schemas.User):
+    # parent = get_item_by_path(db, item.path)
+    parent_path = "/".join(item.path.split("/")[:-1])
+    parent = get_user_item_by_path(db, user, parent_path)
     name = item.path.split("/")[-1]
     db_item = models.Item(
-        **item.model_dump(),
-        owner_id=user_id,
+        owner_id=user.id,
         parent_id=parent.id,
         type=item.type,
         size=item.size,
