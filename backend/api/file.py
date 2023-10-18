@@ -7,7 +7,12 @@ from sqlalchemy.orm import Session
 
 from ..db.crud import check_space
 from ..db.schemas import ItemCreate, User
-from ..dependencies import get_current_active_user, get_db, oauth2_scheme
+from ..dependencies import (
+    create_folder_dp,
+    get_current_active_user,
+    get_db,
+    oauth2_scheme,
+)
 from ..settings import settings
 from ..utils import get_root_path
 
@@ -18,14 +23,13 @@ router = APIRouter(prefix="/api")
 
 @router.post("/mkdir/{path:path}")
 def mkdir(
-    path: str,
-    user: User = Depends(get_current_active_user),
+    success: bool = Depends(create_folder_dp),
 ):
-    user_root_path = get_root_path(user)
+    """user_root_path = get_root_path(user)
     if not os.path.exists(f"{user_root_path}"):
         return {"error": "path not exists"}
-    os.mkdir(f"{user_root_path}/{path}")
-    return {"path": path}
+    os.mkdir(f"{user_root_path}/{path}")"""
+    return {"success": success}
 
 
 @router.post("/rename/{path:path}")
@@ -99,7 +103,6 @@ async def preupload(
 @router.post("/upload/{path:path}")
 async def create_upload_file(
     file: UploadFile,
-    itemCreate: ItemCreate,
     path: str,
     user: User = Depends(get_current_active_user),
 ):
@@ -118,6 +121,7 @@ async def list(path: str, user: User = Depends(get_current_active_user)):
     user_root_path = get_root_path(user)
     if not os.path.exists(f"{user_root_path}/{path}"):
         return {"error": "path not exists"}
+
     return os.listdir(f"{user_root_path}/{path}")
 
 

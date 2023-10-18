@@ -2,18 +2,20 @@ from pydantic import BaseModel
 
 
 class ItemBase(BaseModel):
-    name: str
+    # 类型 0 文件夹 1 文件
     type: int
     size: int
 
 
 class ItemCreate(ItemBase):
-    parent: int
     path: str
+    pass
 
 
 class Item(ItemBase):
     id: int
+    name: str
+    parent_id: int
     owner_id: int
 
     class Config:

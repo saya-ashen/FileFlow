@@ -6,10 +6,10 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from .db.crud import get_user
+from .db import crud, schemas
 from .db.database import SessionLocal
-from .db.schemas import User
 from .settings import settings
+from .utils import create_folder
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.TOKEN_URL)
 
@@ -67,13 +67,24 @@ async def get_current_user(
         token_data = TokenData(id=user_id)
     except JWTError as e:
         raise credentials_exception
-    user = get_user(db, user_id=token_data.id)
+    user = crud.get_user(db, user_id=token_data.id)
     if user is None:
         raise credentials_exception
     return user
 
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
+async def get_current_active_user(
+    current_user: schemas.User = Depends(get_current_user),
+):
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+def create_folder_dp(
+    path: str,
+    user: schemas.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    create_folder(path, user, db)
+    return {"success": True}

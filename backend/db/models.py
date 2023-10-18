@@ -30,6 +30,8 @@ class User(Base):
 class Item(Base):
     __tablename__ = "items"
 
+    # TODO 现在Item是存储在一个表中的，后期可能需要每个用户一个表
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     # 文件类型，0表示文件，1表示文件夹
@@ -37,9 +39,7 @@ class Item(Base):
     # 文件大小，单位为字节
     size = Column(Integer, index=True, default=0)
     # 文件的父文件夹
-    parent = Column(Integer, index=True, default=0)
-    # 文件的路径
-    path = Column(String, index=True, default="")
+    parent_id = Column(Integer, index=True, default=0)
     # 文件的所有者
     owner_id = Column(Integer, ForeignKey("users.id"))
 
