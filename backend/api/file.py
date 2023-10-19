@@ -1,7 +1,7 @@
 import os
-from typing import Annotated
+from typing import List, Union
 
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, Query, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -143,8 +143,21 @@ async def list(
 
 
 @router.get("/download/{path:path}")
-async def download(path: str, user: User = Depends(get_current_active_user)):
+async def download(
+    path: str, files: List[str] = Query(), user: User = Depends(get_current_active_user)
+):
+    """
+    暂时只支持下载单个文件，选择多个文件下载时，只下载第一个文件
+    """
     user_root_path = get_root_path(user)
-    if not os.path.exists(f"{user_root_path}/{path}"):
-        return {"error": "path not exists"}
-    return FileResponse(f"{user_root_path}/{path}")
+    files_path = []
+    for file in files:
+        if not os.path.exists(f"{user_root_path}/{path}/{file}"):
+            return {"error": "path not exists"}
+        files_path.append(f"{user_root_path}/{path}/{file}")
+    """response = {
+        "data": FileResponse(files_path[0]),
+        "total": len(files),
+        "success": True,
+    }"""
+    return FileResponse(files_path[0])
