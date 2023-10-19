@@ -1,7 +1,7 @@
 import os
-from typing import List, Union
+from typing import Dict, List
 
-from fastapi import APIRouter, Depends, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -102,11 +102,14 @@ async def preupload(
 # 上传文件，实现断点续传功能？
 @router.post("/upload/{path:path}")
 async def upload(
-    file: UploadFile,
     path: str,
+    file: UploadFile = File(...),
+    data: Dict = None,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
+    print("file:", file)
+    print("data:", data)
     user_root_path = get_root_path(user)
     contents = await file.read()
     if not os.path.exists(f"{user_root_path}/{path}"):
@@ -120,7 +123,7 @@ async def upload(
         size=file.size,
     )
     crud.create_user_item(db, item, user)
-    return {"filename": file.filename}
+    return {"filename": file.filename, "success": True}
 
 
 @router.get("/list/{path:path}")
