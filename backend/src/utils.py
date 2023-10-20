@@ -82,34 +82,6 @@ def verify_refresh_token(token: str):
         return None
 
 
-"""def create_access_token(subject: Union[str, Any], expires_delta: int = None) -> str:
-    if expires_delta is not None:
-        expires_delta = datetime.utcnow() + expires_delta
-    else:
-        expires_delta = datetime.utcnow() + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-
-    to_encode = {"exp": expires_delta, "sub": str(subject)}
-    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, settings.ALGORITHM)
-    return encoded_jwt
-
-
-def create_refresh_token(subject: Union[str, Any], expires_delta: int = None) -> str:
-    if expires_delta is not None:
-        expires_delta = datetime.utcnow() + expires_delta
-    else:
-        expires_delta = datetime.utcnow() + timedelta(
-            minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES
-        )
-
-    to_encode = {"exp": expires_delta, "sub": str(subject)}
-    encoded_jwt = jwt.encode(
-        to_encode, settings.JWT_REFRESH_SECRET_KEY, settings.ALGORITHM
-    )
-    return encoded_jwt"""
-
-
 # 获取用户的根目录路径
 def get_root_path(user: schemas.User) -> str:
     return f"{settings.ROOT_PATH}/UserStorage/{user.username}"
@@ -139,15 +111,12 @@ def get_file_path(item: models.Item, user: schemas.User) -> str:
 def create_root_folder(
     path: str,
     user: schemas.User,
-    # user: schemas.User = Depends(get_current_active_user),
     db: Session,
 ) -> bool:
     print("create folder")
     user_root_path = get_root_path(user)
     print(user_root_path)
     item_create = schemas.ItemCreate(path=path, type=0, size=0)
-    # if path != "" and (not os.path.exists(f"{user_root_path}")):
-    #    raise Exception("user root path not exists")
     os.mkdir(f"{user_root_path}/{path}")
     crud.create_user_root_item(db, item_create, user)
     return True
@@ -156,22 +125,12 @@ def create_root_folder(
 def create_folder(
     path: str,
     user: schemas.User,
-    # user: schemas.User = Depends(get_current_active_user),
     db: Session,
 ) -> bool:
     print("create folder")
     user_root_path = get_root_path(user)
     print(user_root_path)
     item_create = schemas.ItemCreate(path=path, type=0, size=0)
-    # if path != "" and (not os.path.exists(f"{user_root_path}")):
-    #    raise Exception("user root path not exists")
     os.mkdir(f"{user_root_path}/{path}")
     crud.create_user_item(db, item_create, user)
     return True
-
-
-'''def get_file_path(item: Item, user: User) -> str:
-    if item.parent_id == 0:
-        return f"{get_root_path(user)}/{item.name}"
-    else:
-        return get_file_path(get_item(item.parent_id), user) + f"/{item.name}"'''

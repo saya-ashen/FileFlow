@@ -7,13 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..db import crud
 from ..db.schemas import ItemCreate, User
-from ..dependencies import (
-    create_folder_dp,
-    get_current_active_user,
-    get_db,
-    oauth2_scheme,
-)
-from ..settings import settings
+from ..dependencies import create_folder_dp, get_current_active_user, get_db
 from ..utils import get_root_path
 
 router = APIRouter(prefix="/api")
@@ -132,11 +126,6 @@ async def list(
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    """user_root_path = get_root_path(user)
-    if not os.path.exists(f"{user_root_path}/{path}"):
-        return {"error": "path not exists"}
-
-    return os.listdir(f"{user_root_path}/{path}")"""
     folder = crud.get_user_item_by_path(db, user, path)
     if folder is None:
         return {"error": "path not exists"}
@@ -158,9 +147,4 @@ async def download(
         if not os.path.exists(f"{user_root_path}/{path}/{file}"):
             return {"error": "path not exists"}
         files_path.append(f"{user_root_path}/{path}/{file}")
-    """response = {
-        "data": FileResponse(files_path[0]),
-        "total": len(files),
-        "success": True,
-    }"""
     return FileResponse(files_path[0])

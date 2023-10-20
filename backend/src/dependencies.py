@@ -32,7 +32,7 @@ class LoginData(Token):
 class LoginResponse(BaseModel):
     success: bool
     data: LoginData
-    access_token: str  # 为了兼容docs工具，这里返回的是access_token TODO: 以后删除
+    # access_token: str  # 为了兼容docs工具，这里返回的是access_token TODO: 以后删除
 
 
 class RefreshResponse(BaseModel):
@@ -41,14 +41,9 @@ class RefreshResponse(BaseModel):
 
 
 class TokenData(BaseModel):
-    # username: Union[str, None] = None
     id: Union[int, None] = None
 
 
-# 登录成功后返回的response
-
-
-# Dependency
 def get_db():
     db = SessionLocal()
     try:
