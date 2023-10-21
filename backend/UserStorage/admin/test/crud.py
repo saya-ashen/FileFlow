@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from ..settings import settings
-from ..utils import create_root_folder
+from ..utils import create_folder
 from . import models, schemas
 
 
@@ -30,10 +30,10 @@ def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = password_context.hash(user.password)
     root_path = settings.ROOT_PATH + "/UserStorage/" + user.username
     # 判断root_path是否存在，如果不存在则创建, 如果存在则返回错误信息
-    """if not os.path.exists(root_path):
+    if not os.path.exists(root_path):
         os.mkdir(root_path)
     else:
-        return {"error": "username exists"}"""
+        return {"error": "username exists"}
     db_user = models.User(
         email=user.email,
         hashed_password=hashed_password,
@@ -48,8 +48,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.commit()
     db.refresh(db_user)
     # 创建用户根目录
-    print("create user root folder")
-    create_root_folder("", db_user, db)
+    create_folder(user.username, db_user, db)
     return db_user
 
 
@@ -61,13 +60,8 @@ def get_item(db: Session, item_id: int):
     return db.query(models.Item).filter(models.Item.id == item_id).first()
 
 
-def get_items_by_parent_id(db: Session, parent_id: int):
-    return db.query(models.Item).filter(models.Item.parent_id == parent_id).all()
-
-
 # 按照文件名查找文件夹下的特定文件
 def get_item_by_name(db: Session, name: str, parent_id: int):
-    print("get_item_by_name:" + name + " " + str(parent_id))
     return (
         db.query(models.Item)
         .filter(models.Item.name == name, models.Item.parent_id == parent_id)
@@ -76,35 +70,29 @@ def get_item_by_name(db: Session, name: str, parent_id: int):
 
 
 # 根据文件（夹）路径获取文件（夹）信息
-def get_user_item_by_path(db: Session, user: schemas.User, path: str):
-    empty = ["", "/", " "]
-    print("get_user_item_by_path:" + path)
+def get_item_by_path(db: Session, path: str):
     # 将传递的路径信息拆分为目录名称的列表
     path_parts = path.split("/")
-    path_parts = [part for part in path_parts if part not in empty]
-    parent = (
-        db.query(models.Item)
-        .filter(models.Item.parent_id == 0, models.Item.name == user.username)
-        .first()
-    )
-    # 判断路径是否为空，如果为空则返回根目录信息
-    if len(path_parts) == 0:
-        return parent
+    if len(path_parts) == 1:
+        return db.query(models.Item).filter(models.Item.name == path).first()
+    # 初始化根目录的ID
+    parent_id = 0
+
     for folder_name in path_parts:
-        folder = get_item_by_name(db, folder_name, parent.id)
-        if folder is None:
+        folder_id = get_item_by_name(db, folder_name, parent_id)
+        if folder_id is None:
             raise Exception("path not exists")
-        parent = folder
-    return parent
+        parent_id = folder_id
+
+    return db.query(models.Item).filter(models.Item.path == path).first()
 
 
-def create_user_item(db: Session, item: schemas.ItemCreate, user: schemas.User):
-    # parent = get_item_by_path(db, item.path)
-    parent_path = "/".join(item.path.split("/")[:-1])
-    parent = get_user_item_by_path(db, user, parent_path)
+def create_user_item(db: Session, item: schemas.ItemCreate, user_id: int):
+    parent = get_item_by_path(db, item.path)
     name = item.path.split("/")[-1]
     db_item = models.Item(
-        owner_id=user.id,
+        **item.model_dump(),
+        owner_id=user_id,
         parent_id=parent.id,
         type=item.type,
         size=item.size,
@@ -116,21 +104,7 @@ def create_user_item(db: Session, item: schemas.ItemCreate, user: schemas.User):
     return db_item
 
 
-def create_user_root_item(db: Session, item: schemas.ItemCreate, user: schemas.User):
-    db_item = models.Item(
-        owner_id=user.id,
-        parent_id=0,
-        name=user.username,
-        type=item.type,
-        size=item.size,
-    )
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
-
-
-"""def init_dababase(db: Session):
+def init_dababase(db: Session):
     print("init database")
     admin = schemas.UserCreate(
         email="admin@admin", nickname="admin", username="admin", password="admin123"
@@ -140,7 +114,6 @@ def create_user_root_item(db: Session, item: schemas.ItemCreate, user: schemas.U
         os.mkdir(settings.ROOT_PATH + "/UserStorage")
     admin_user = create_user(db, admin)
     print(admin_user)
-"""
 
 
 # 判断剩余空间是否足够

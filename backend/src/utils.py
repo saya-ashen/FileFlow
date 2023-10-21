@@ -97,14 +97,21 @@ def delete(item_create: schemas.ItemCreate, user: schemas.User) -> bool:
     return True
 
 
-# 根据文件路径信息拼接文件路径
-def get_file_path(item: models.Item, user: schemas.User) -> str:
-    file_path = ""
-    while item.parent_id != 0:
-        parent_item: models.Item = crud.get_item(item.parent_id)
+def get_file_path(
+    db: Session, item: models.Item, user: schemas.User, relative: bool = False
+) -> str:
+    file_path = item.name
+    while True:
+        parent_item = crud.get_item(db, item.parent_id)
+        if parent_item.parent_id == 0:
+            break
         file_path: str = f"{parent_item.name}/{file_path}"
         item = parent_item
-    return f"{get_root_path(user)}/{file_path}{item.name}"
+        print("count")
+    print("file_path: ", file_path)
+    if relative:
+        return file_path
+    return f"{get_root_path(user)}/{file_path}"
 
 
 # 创建用户根文件夹

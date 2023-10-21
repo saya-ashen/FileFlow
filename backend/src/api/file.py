@@ -1,14 +1,14 @@
 import os
 from typing import Dict, List
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from ..db import crud
+from ..db import crud, models
 from ..db.schemas import ItemCreate, User
 from ..dependencies import create_folder_dp, get_current_active_user, get_db
-from ..utils import get_root_path
+from ..utils import get_file_path, get_root_path
 
 router = APIRouter(prefix="/api")
 
@@ -90,25 +90,37 @@ async def preupload(
 
 
 # 上传文件，实现断点续传功能？
-@router.post("/upload/{path:path}")
+@router.post("/upload")
 async def upload(
-    path: str,
+    folder_id: int = Query(-1),
     file: UploadFile = File(...),
-    data: Dict = None,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    print("file:", file)
-    print("data:", data)
-    user_root_path = get_root_path(user)
+    if folder_id == -1:
+        folder = crud.get_user_item_by_path(db, user, "/")
+    else:
+        # 判断所给的folder_id是否有效
+        folder = crud.get_item(db, folder_id)
+        if folder is None:
+            return {"error": "path not exists"}
+        if folder.owner_id != user.id:
+            return {"error": "permission denied"}
+        if folder.type != 0:
+            return {"error": "not a folder"}
+
+    # 获取文件夹路径并判断是否存在
+    path_relative = get_file_path(db, folder, user, relative=True)
+    path_full = get_root_path(user) + "/" + path_relative
     contents = await file.read()
-    if not os.path.exists(f"{user_root_path}/{path}"):
+    if not os.path.exists(path_full):
         return {"error": "path not exists"}
 
-    with open(f"{user_root_path}/{path}/{file.filename}", "wb") as f:
+    # 写入文件并将文件信息写入数据库
+    with open(f"{path_full}/{file.filename}", "wb") as f:
         f.write(contents)
     item = ItemCreate(
-        path=f"{path}/{file.filename}",
+        path=f"{path_relative}/{file.filename}",
         type=1,
         size=file.size,
     )
@@ -116,17 +128,46 @@ async def upload(
     return {"filename": file.filename, "success": True}
 
 
-@router.get("/list/{path:path}")
+@router.get("/list")
 async def list(
-    path: str,
+    item_id: int = Query(-1),
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    folder = crud.get_user_item_by_path(db, user, path)
-    if folder is None:
-        return {"error": "path not exists"}
-    items = crud.get_items_by_parent_id(db, folder.id)
-    response = {"path": path, "items": items, "total": len(items), "success": True}
+    if item_id == -1:
+        folder = crud.get_user_item_by_path(db, user, "/")
+        items = crud.get_items_by_parent_id(db, folder.id)
+    else:
+        folder = crud.get_item(db, item_id)
+        # folder = crud.get_user_item_by_path(db, user, path)
+        if folder is None:
+            return {"error": "path not exists"}
+        if folder.owner_id != user.id:
+            return {"error": "permission denied"}
+        items = crud.get_items_by_parent_id(db, folder.id)
+        parent = crud.get_item(db, folder.parent_id)
+        if parent is not None:
+            items.append(
+                models.Item(
+                    id=parent.id,
+                    name="..",
+                    type=0,
+                    size=0,
+                    parent_id=parent.parent_id,
+                    owner_id=parent.owner_id,
+                )
+            )
+    items.append(
+        models.Item(
+            id=folder.id,
+            name=".",
+            type=0,
+            size=0,
+            parent_id=folder.parent_id,
+            owner_id=folder.owner_id,
+        )
+    )
+    response = {"items": items, "total": len(items), "success": True}
     return response
 
 

@@ -25,8 +25,8 @@ from pydantic_settings import BaseSettings
 
 # 从环境变量中读取配置
 class Settings(BaseSettings):
-    ROOT_PATH: str = "/usr/src/app"
-    # ROOT_PATH: str = "/root/workspace/fileflow/backend"
+    # ROOT_PATH: str = "/usr/src/app"
+    ROOT_PATH: str = "/root/workspace/fileflow/backend"
     SQLALCHEMY_DATABASE_URL: str = f"sqlite:///{ROOT_PATH}/src/db/sql.db"
     DEFAULT_CAPACITY: int = Field(1024 * 1024 * 1024 * 1024, env="DEFAULT_CAPACITY")
     ALGORITHM: str = Field("HS256", env="ALGORITHM")
