@@ -19,10 +19,6 @@ router = APIRouter(prefix="/api")
 def mkdir(
     success: bool = Depends(create_folder_dp),
 ):
-    """user_root_path = get_root_path(user)
-    if not os.path.exists(f"{user_root_path}"):
-        return {"error": "path not exists"}
-    os.mkdir(f"{user_root_path}/{path}")"""
     return {"success": success}
 
 

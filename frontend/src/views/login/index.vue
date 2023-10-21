@@ -62,6 +62,30 @@ const onLogin = async (formEl: FormInstance | undefined) => {
     });
 };
 
+const onRegister = async (formEl: FormInstance | undefined) => {
+    loading.value = true;
+    if (!formEl) return;
+    await formEl.validate((valid, fields) => {
+        if (valid) {
+            const formData = { grant_type: 'password', username: ruleForm.username, password: ruleForm.password }
+            useUserStoreHook()
+                .registerByUsername(formData)
+                .then(res => {
+                    if (res.success) {
+                        // 获取后端路由
+                        initRouter().then(() => {
+                            router.push(getTopMenu(true).path);
+                            message("注册成功", { type: "success" });
+                        });
+                    }
+                });
+        } else {
+            loading.value = false;
+            return fields;
+        }
+    });
+};
+
 /** 使用公共函数，避免`removeEventListener`失效 */
 function onkeypress({ code }: KeyboardEvent) {
     if (code === "Enter") {
@@ -124,6 +148,12 @@ onBeforeUnmount(() => {
                                 登录
                             </el-button>
                         </Motion>
+                    <Motion :delay="300">
+                    <el-button class="w-full mt-4" size="default" type="primary" :loading="loading"
+                        @click="onRegister(ruleFormRef)">
+                        注册
+                    </el-button>
+                    </Motion>
                     </el-form>
                 </div>
             </div>

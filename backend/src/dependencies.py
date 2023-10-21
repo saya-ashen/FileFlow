@@ -91,4 +91,4 @@ def create_folder_dp(
     db: Session = Depends(get_db),
 ):
     create_folder(path, user, db)
-    return {"success": True}
+    return True

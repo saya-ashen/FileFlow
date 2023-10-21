@@ -36,6 +36,17 @@ export const getLogin = (data?: object) => {
   //return http.request<UserResult>("post", "login", { data, headers: { "Content-Type": "application/x-www-form-urlencoded" } });
 };
 
+/** 注册 */
+export const getRegister = (data?: object) => {
+  const reg_data = {
+    username: data["username"],
+    nickname: data["username"],
+    password: data["password"],
+    email: "test@test",
+  };
+return http.request<UserResult>("post", baseUrlApi("api/register"), { data:reg_data, headers: { "Content-Type": "application/json" } });
+};
+
 /** 刷新token */
 export const refreshTokenApi = (data?: object) => {
   return http.request<RefreshTokenResult>("post", baseUrlApi("api/refreshToken"), { data });

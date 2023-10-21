@@ -96,4 +96,18 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     db_user = get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="邮箱已存在")
-    return create_user(db=db, user=user)
+    user = create_user(db=db, user=user)
+    access_token, expires_access = create_access_token(user.id)
+    refresh_token, expire_refresh = create_refresh_token(user.id)
+    response = LoginResponse(
+        success=True,
+        data=LoginData(
+            username=user.username,
+            roles=["admin"],
+            access_Token=access_token,
+            refresh_Token=refresh_token,
+            expires=expires_access,  # TODO
+        ),
+        access_token=access_token,
+    )
+    return response

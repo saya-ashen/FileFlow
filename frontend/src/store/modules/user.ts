@@ -1,4 +1,4 @@
-import { RefreshTokenResult, UserResult, getLogin, refreshTokenApi } from "@/api/user";
+import { RefreshTokenResult, UserResult, getLogin, getRegister, refreshTokenApi } from "@/api/user";
 import { routerArrays } from "@/layout/types";
 import { resetRouter, router } from "@/router";
 import { store } from "@/store";
@@ -41,6 +41,20 @@ export const useUserStore = defineStore({
                     });
             });
         },
+      async registerByUsername(data) {
+        return new Promise<UserResult>((resolve, reject) => {
+          getRegister(data)
+            .then(data => {
+              if (data) {
+                setToken(data.data);
+                resolve(data);
+              }
+            })
+            .catch(error => {
+              reject(error);
+            });
+        });
+      },
         /** 前端登出（不调用接口） */
         logOut() {
             this.username = "";

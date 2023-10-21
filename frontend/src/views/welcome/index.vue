@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { baseUrlApi } from "@/api/utils";
 import { http } from "@/utils/http";
-import data from "@iconify-icons/ri/fullscreen-fill";
 import PureTable from "@pureadmin/table";
 import qs from "qs";
 import { onMounted, ref } from "vue";
@@ -25,7 +24,11 @@ const tableData = ref([]);
 // 在 'onMounted' 钩子中发起 HTTP 请求
 onMounted(async () => {
     try {
-        const response = await http.request<FilesResult>("get", baseUrlApi("/api/list/"));
+      const response = await http.request<FilesResult>("get", baseUrlApi("/api/list/"));
+      const items = response.items;
+      items.forEach(item => {
+        item.type = item.type === 0 ? '文件夹' : '文件';
+      });
         tableData.value = response.items;
     } catch (error) {
         console.error('There was an error fetching the data:', error);
@@ -46,6 +49,22 @@ const toggleSelection = (rows?: any) => {
 };
 const handleSelectionChange = val => {
     multipleSelection.value = val;
+};
+const handleRowClick = async row => {
+  if (row.type === '文件夹') {
+    try {
+      const response = await http.request<FilesResult>("get", baseUrlApi("/api/list/") + row.name);
+      const items = response.items;
+      items.forEach(item => {
+        item.type = item.type === 0 ? '文件夹' : '文件';
+      });
+      tableData.value = response.items;
+    } catch (error) {
+      console.error('There was an error fetching the data:', error);
+    }
+  } else {
+    alert('这是一个文件，无法打开！');
+  }
 };
 const handleDownload = async () => {
   if (multipleSelection.value.length === 0) {
@@ -101,7 +120,7 @@ const handleDownload = async () => {
     }
 
 };
-const handleUpload = async (uploadPath) => {
+const handleUpload = async () => {
     // 创建一个文件输入控件
     const input = document.createElement('input');
     input.type = 'file';
@@ -125,6 +144,8 @@ const handleUpload = async (uploadPath) => {
           
             if (response.success === true) {
                 alert('上传成功！');
+            // 刷新页面
+                window.location.reload();
             } else {
                 console.error('上传失败:', response);
             }
@@ -134,6 +155,27 @@ const handleUpload = async (uploadPath) => {
     };
 };
 
+const handleNewFolder = async () => {
+    const folderName = prompt('请输入文件夹名称：');
+    if (!folderName) {
+        return;
+    }
+
+    try {
+        const response = await http.request<FilesResult>("post",baseUrlApi("api/mkdir/"+ folderName) , {
+        });
+
+        if (response.success === true) {
+            alert('创建成功！');
+            // 刷新页面
+            window.location.reload();
+        } else {
+            console.error('创建失败:', response);
+        }
+    } catch (error) {
+        console.error('创建文件夹时出错:', error);
+    }
+};
 
 const columns: TableColumnList = [
     {
@@ -148,22 +190,25 @@ const columns: TableColumnList = [
         label: "大小",
         prop: "size"
     },
-    {
-        label: "日期",
-        prop: "date"
+  {
+    label: "类型",
+    prop: "type"
     }
 ];
 </script>
 
 <template>
-    <pure-table ref="tableRef" :data="tableData" :columns="columns"
-        @selection-change="handleSelectionChange" height="360" />
+      <pure-table ref="tableRef" :data="tableData" :columns="columns"
+                @selection-change="handleSelectionChange" 
+                @row-click="handleRowClick" height="360"> </pure-table>
   <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
             <div>
                 <el-button @click="toggleSelection(tableData)">全选</el-button>
                 <el-button @click="toggleSelection()">清除</el-button>
             </div>
             <div>
+
+                <el-button type="primary" icon="el-icon-download" @click="handleNewFolder">新建文件夹</el-button>
                 <el-button type="primary" icon="el-icon-download" @click="handleDownload">下载</el-button>
                 <el-button type="primary" icon="el-icon-download" @click="handleUpload">上传</el-button>
             </div>
