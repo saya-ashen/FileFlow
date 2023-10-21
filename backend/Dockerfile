@@ -37,4 +37,5 @@ COPY . .
 EXPOSE 8000
 
 # 运行应用
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+#CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-w","4", "-b", "0.0.0.0:8000", "src.main:app"]
