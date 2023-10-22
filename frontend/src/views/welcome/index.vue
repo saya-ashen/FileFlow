@@ -240,9 +240,9 @@ const columns: TableColumnList = [
     </div>
     <div>
 
-      <el-button type="primary" icon="el-icon-download" @click="handleNewFolder">新建文件夹</el-button>
-      <el-button type="primary" icon="el-icon-download" @click="handleDownload">下载</el-button>
-      <el-button type="primary" icon="el-icon-download" @click="handleUpload">上传</el-button>
+      <el-button type="primary" @click="handleNewFolder">新建文件夹</el-button>
+      <el-button type="primary" @click="handleDownload">下载</el-button>
+      <el-button type="primary" @click="handleUpload">上传</el-button>
     </div>
   </div>
 </template>

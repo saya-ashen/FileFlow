@@ -111,3 +111,13 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         access_token=access_token,
     )
     return response
+
+
+@router.get("/getAsyncRoutes")
+async def get_async_routes():
+    router = {
+        "path": "/file",
+        "meta": {"title": "其他", "icon": "folder", "rank": 10},
+    }
+
+    return {"success": True, "data": [router]}

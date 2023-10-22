@@ -103,6 +103,8 @@ def get_file_path(
     file_path = item.name
     while True:
         parent_item = crud.get_item(db, item.parent_id)
+        if parent_item is None:
+            return ""
         if parent_item.parent_id == 0:
             break
         file_path: str = f"{parent_item.name}/{file_path}"

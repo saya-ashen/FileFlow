@@ -44,7 +44,7 @@ export const getRegister = (data?: object) => {
     password: data["password"],
     email: "test@test",
   };
-return http.request<UserResult>("post", baseUrlApi("api/register"), { data:reg_data, headers: { "Content-Type": "application/json" } });
+  return http.request<UserResult>("post", baseUrlApi("api/register"), { data: reg_data, headers: { "Content-Type": "application/json" } });
 };
 
 /** 刷新token */

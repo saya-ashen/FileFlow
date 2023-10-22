@@ -240,7 +240,7 @@ onBeforeMount(() => {
       :inactive-icon="darkIcon"
       @change="dataThemeChange"
     />
-
+<!--
     <el-divider>导航栏模式</el-divider>
     <ul class="pure-theme">
       <el-tooltip
@@ -384,13 +384,13 @@ onBeforeMount(() => {
         </el-radio-group>
       </li>
     </ul>
-
+  -->
     <el-divider />
     <el-button
       type="danger"
       style="width: 90%; margin: 24px 15px"
       @click="onReset"
-    >
+    > 
       <IconifyIconOffline
         :icon="Logout"
         width="15"
