@@ -1,7 +1,17 @@
 import os
-from typing import Dict, List
+import zipfile
+from typing import List
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -13,6 +23,11 @@ from ..utils import get_file_path, get_root_path
 router = APIRouter(prefix="/api")
 
 # 定义储存用户文件的根目录
+
+
+def remove_file(path: str):
+    if os.path.exists(path):
+        os.remove(path)
 
 
 @router.post("/mkdir/{path:path}")
@@ -104,20 +119,73 @@ async def list(
     return response
 
 
-@router.get("/download/{path:path}")
+@router.get("/download")
 async def download(
-    path: str, files: List[str] = Query(), user: User = Depends(get_current_active_user)
+    files: List[int] = Query(),
+    user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
 ):
     """
-    暂时只支持下载单个文件，选择多个文件下载时，只下载第一个文件
+    现在支持下载多个文件。当选择多个文件下载时，会打包成一个zip文件。
     """
+    if not files:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No files specified"
+        )
+
+    if len(files) == 1:
+        item = crud.get_item(db, files[0])
+        if item is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"File {files[0]} not found",
+            )
+        if item.owner_id != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied"
+            )
+        if item.type != 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Not a file"
+            )
+
+        file_path = get_file_path(db, item, user)
+        return FileResponse(file_path, filename=item.name)
+
     user_root_path = get_root_path(user)
-    files_path = []
-    for file in files:
-        if not os.path.exists(f"{user_root_path}/{path}/{file}"):
-            return {"error": "path not exists"}
-        files_path.append(f"{user_root_path}/{path}/{file}")
-    return FileResponse(files_path[0])
+    zip_file_path = f"{user_root_path}/download.zip"
+
+    # 创建临时的zip文件
+    with zipfile.ZipFile(zip_file_path, "w") as zipf:
+        for file_id in files:
+            item = crud.get_item(db, file_id)
+            if item is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"File {file_id} not found",
+                )
+            if item.owner_id != user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied"
+                )
+            if item.type != 1:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Not a file"
+                )
+
+            file_path = get_file_path(db, item, user)
+            # 将文件添加到zip文件中
+            zipf.write(file_path, os.path.basename(file_path))
+
+    # 添加一个后台任务来在文件被发送后删除它
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(remove_file, zip_file_path)
+
+    # 返回zip文件
+    return FileResponse(
+        zip_file_path,
+        filename="download.zip",
+    )
 
 
 """以下部分暂未完成"""

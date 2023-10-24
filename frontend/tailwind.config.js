@@ -4,6 +4,11 @@ module.exports = {
   corePlugins: {
     preflight: false
   },
+  chainWebpack: config => {
+    if (isDev) {
+      config.devtool('source-map')
+    }
+  },
   content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
   theme: {
     extend: {

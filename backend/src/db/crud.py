@@ -30,10 +30,6 @@ def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = password_context.hash(user.password)
     root_path = settings.ROOT_PATH + "/UserStorage/" + user.username
     # 判断root_path是否存在，如果不存在则创建, 如果存在则返回错误信息
-    """if not os.path.exists(root_path):
-        os.mkdir(root_path)
-    else:
-        return {"error": "username exists"}"""
     db_user = models.User(
         email=user.email,
         hashed_password=hashed_password,
@@ -57,7 +53,7 @@ def get_items(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Item).offset(skip).limit(limit).all()
 
 
-def get_item(db: Session, item_id: int):
+def get_item(db: Session, item_id: int) -> models.Item:
     return db.query(models.Item).filter(models.Item.id == item_id).first()
 
 

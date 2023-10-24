@@ -1,27 +1,6 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-"""class Settings(BaseSettings):
-    ROOT_PATH: str = "/root/workspace/fileflow/backend"
-    SQLALCHEMY_DATABASE_URL: str = f"sqlite:///{ROOT_PATH}/db/sql.db"
-    DEFAULT_CAPACITY: int = 1024 * 1024 * 1024 * 1024
-    ALGORITHM: str = "HS256"
-    TOKEN_URL: str = "/api/login"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
-    JWT_SECRET_KEY: str = "test"  # should be kept secret
-    JWT_REFRESH_SECRET_KEY: str = "test"  # should be kept secret
-
-    @property
-    def db_url(self) -> URL:
-        return self.SQLALCHEMY_DATABASE_URL
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_prefix="FILEFLOW_",
-        env_file_encoding="utf-8",
-    )"""
-
 
 # 从环境变量中读取配置
 class Settings(BaseSettings):
